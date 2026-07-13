@@ -11,6 +11,7 @@ export const setupGui = () => {
 	const images = gui.addFolder("images");
 	images.add(params, "showImages").name("show images");
 	images.add(params, "imageScale", 0.3, 2.5, 0.05).name("image scale");
+	images.add(params, "parallax", -6.0, 6.0, 0.1).name("parallax");
 
 	const colors = gui.addFolder("fallback colors").close();
 	colors.addColor(params, "colorA").name("color A");

@@ -16,6 +16,10 @@ const dragOffset = { x: 0, y: 0 };
 const wheelOffset = { x: 0, y: 0 };
 const wheelVelocity = { x: 0, y: 0 };
 const combined = { x: 0, y: 0 };
+// 画像内パララックス用のスクロール速度 (combined の毎フレーム差分を EMA で平滑化)
+const scrollVelocity = { x: 0, y: 0 };
+let prevCombinedX = 0;
+let prevCombinedY = 0;
 const lastPointer = { x: 0, y: 0 };
 let isDragging = false;
 let dragTween: gsap.core.Tween | null = null;
@@ -34,6 +38,8 @@ const DRAG_INERTIA_DURATION = 1.0;
 const DRAG_INERTIA_FACTOR = 0.25;
 // velocity 計算用サンプルウィンドウ (ms)
 const SAMPLE_WINDOW_MS = 100;
+// scrollVelocity の EMA 平滑化係数 (パララックス用、ジャダー抑制)
+const SCROLL_VELOCITY_EMA = 0.2;
 
 const pixelToCellScale = (density: number) => density / window.innerHeight;
 
@@ -159,6 +165,19 @@ export const updateInput = () => {
 
 	combined.x = dragOffset.x + wheelOffset.x;
 	combined.y = dragOffset.y + wheelOffset.y;
+
+	// パララックス用に「フレーム間の生スクロール差分」を EMA で平滑化して保持。
+	// wheel の減衰・gsap tween・ドラッグ中の lerp が全部 combined に反映されているので、
+	// 差分を取ればどの入力起点でも「今どれくらい流れているか」が拾える。
+	const rawVx = combined.x - prevCombinedX;
+	const rawVy = combined.y - prevCombinedY;
+	scrollVelocity.x =
+		scrollVelocity.x * (1 - SCROLL_VELOCITY_EMA) + rawVx * SCROLL_VELOCITY_EMA;
+	scrollVelocity.y =
+		scrollVelocity.y * (1 - SCROLL_VELOCITY_EMA) + rawVy * SCROLL_VELOCITY_EMA;
+	prevCombinedX = combined.x;
+	prevCombinedY = combined.y;
 };
 
 export const getOffset = () => combined;
+export const getScrollVelocity = () => scrollVelocity;

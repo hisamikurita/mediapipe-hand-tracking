@@ -2,6 +2,7 @@ import "./style.css";
 import {
 	getDensity,
 	getOffset,
+	getScrollVelocity,
 	handleResize,
 	initRenderer,
 	setupGui,
@@ -21,5 +22,5 @@ handleResize();
 
 startAnimationLoop((elapsed) => {
 	updateInput();
-	updateVoronoi(elapsed, getOffset());
+	updateVoronoi(elapsed, getOffset(), getScrollVelocity());
 });

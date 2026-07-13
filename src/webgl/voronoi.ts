@@ -12,6 +12,7 @@ export const params = {
 	showPoints: false,
 	showImages: true,
 	imageScale: 0.5,
+	parallax: 0.35,
 	colorA: "#1e2a55",
 	colorB: "#d1e6ff",
 	edgeColor: "#050914",
@@ -45,6 +46,8 @@ export const setupVoronoi = () => {
 			uImagesReady: { value: 0 },
 			uShowImages: { value: params.showImages ? 1 : 0 },
 			uImageScale: { value: params.imageScale },
+			uScrollVelocity: { value: new Vector2(0, 0) },
+			uParallax: { value: params.parallax },
 		},
 	});
 	const mesh = new Mesh(geometry, material);
@@ -68,7 +71,11 @@ export const setupVoronoi = () => {
 	});
 };
 
-export const updateVoronoi = (elapsed: number, offset: { x: number; y: number }) => {
+export const updateVoronoi = (
+	elapsed: number,
+	offset: { x: number; y: number },
+	scrollVelocity: { x: number; y: number },
+) => {
 	material.uniforms.uTime.value = elapsed;
 	material.uniforms.uDensity.value = params.density;
 	material.uniforms.uAnimSpeed.value = params.animSpeed;
@@ -76,10 +83,15 @@ export const updateVoronoi = (elapsed: number, offset: { x: number; y: number })
 	material.uniforms.uShowPoints.value = params.showPoints ? 1 : 0;
 	material.uniforms.uShowImages.value = params.showImages ? 1 : 0;
 	material.uniforms.uImageScale.value = params.imageScale;
+	material.uniforms.uParallax.value = params.parallax;
 	(material.uniforms.uColorA.value as Color).set(params.colorA);
 	(material.uniforms.uColorB.value as Color).set(params.colorB);
 	(material.uniforms.uEdgeColor.value as Color).set(params.edgeColor);
 	(material.uniforms.uOffset.value as Vector2).set(offset.x, offset.y);
+	(material.uniforms.uScrollVelocity.value as Vector2).set(
+		scrollVelocity.x,
+		scrollVelocity.y,
+	);
 };
 
 export const getDensity = () => params.density;

@@ -21,6 +21,8 @@ uniform float uImageCount;   // 有効な画像数
 uniform float uImagesReady;  // 0=未ロード / 1=ロード済み
 uniform float uShowImages;   // 画像描画 ON/OFF
 uniform float uImageScale;   // セル内画像の拡大率 (小さくすると画像が寄る、大きくすると引き)
+uniform vec2  uScrollVelocity; // 毎フレームのスクロール速度 (cell/frame)
+uniform float uParallax;       // パララックス強度 (0=OFF、正なら drag/wheel と同方向にシフト)
 
 // 2D ハッシュ: セル座標 -> 疑似ランダム 2D 点
 vec2 hash2(vec2 p) {
@@ -89,6 +91,9 @@ void main() {
 	if (uImagesReady > 0.5 && uShowImages > 0.5) {
 		// 種点中心で cover-fit 済み画像をサンプル。Voronoi セル形状で自然にクロップ
 		vec2 imgUv = 0.5 - nearestOffset * uImageScale;
+		// パララックス: スクロール速度に応じて画像 UV をシフト。画像がセルより
+		// 「遅れて動く」ように見える。過度なシフトを避けるため範囲を制限。
+		imgUv += clamp(uScrollVelocity * uParallax, vec2(-0.20), vec2(0.20));
 		// アトラス隣接タイルへの染み出しを防ぐ
 		imgUv = clamp(imgUv, 0.001, 0.999);
 		float idx = floor(cellRand * uImageCount);
