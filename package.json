@@ -1,0 +1,26 @@
+{
+	"name": "voronoi-diagram",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview",
+		"check": "biome check",
+		"fix": "biome check --write"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.1",
+		"@rollup/pluginutils": "^5.4.0",
+		"@types/three": "^0.185.0",
+		"typescript": "~5.6.2",
+		"vite": "^5.4.10",
+		"vite-plugin-glsl": "^1.3.0"
+	},
+	"dependencies": {
+		"gsap": "^3.12.5",
+		"lil-gui": "^0.19.2",
+		"three": "^0.185.0"
+	}
+}
