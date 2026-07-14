@@ -66,22 +66,20 @@ vec2 displaceForFocus(vec2 seedWorld, float density, float amount) {
 	if (finalCheb < 0.001) return seedWorld;
 
 	float finalRectHalf = 0.45 * density;
-	// pushZoneWidth を広めに (0.7 * density) 取り、maxPushCap を控えめに (1.0) することで
-	// 圧縮率 = maxCap / pushZoneWidth ≈ 24%。近接 seed が push で衝突するのを防ぎ、
-	// 「post-push でセルが uEdgeWidth 以下まで潰れて白線一色になる」現象を回避。
-	float pushZoneWidth = 0.7 * density;
+	// 圧縮率 = maxPushCap / pushZoneWidth。この値が高いほど遷移帯の隣接 seed が接近して
+	// Power cell が uEdgeWidth 以下に潰れ、cell 全体が edgeColor で白抜き化する。
+	// pushZoneWidth = 1.0*density, maxPushCap = 0.8 → 圧縮率 13% (旧値 24% から緩和)。
+	// 圧縮率をこの水準に抑えると、近接 seed 間の post-push gap が edgeWidth の数倍を維持できる。
+	float pushZoneWidth = 1.0 * density;
 	float pushZoneEnd = finalRectHalf + pushZoneWidth;
 	if (finalCheb > pushZoneEnd) return seedWorld;
 
-	float maxPushCap = 1.0;
-	float pushAmount;
-	if (finalCheb < finalRectHalf) {
-		pushAmount = maxPushCap;
-	} else {
-		float t = 1.0 - (finalCheb - finalRectHalf) / pushZoneWidth;
-		pushAmount = maxPushCap * t;
-	}
-	pushAmount *= amount;
+	float maxPushCap = 0.8;
+	// rectHalf 側でも 0 側でも傾きが 0 になる smoothstep 系のプロファイル。
+	// linear は遷移帯全域で一定圧縮だが、smoothstep 系にすると圧縮が遷移帯中央に集中しつつ
+	// 端部の C^1 連続性が保たれ、rect 境界跨ぎで seed が急停止しない。
+	float t = 1.0 - smoothstep(finalRectHalf, pushZoneEnd, finalCheb);
+	float pushAmount = maxPushCap * t * amount;
 
 	// 対角付近を滑らかに blend した L∞ normal 方向
 	// ratio=1 (|y|=0) → +x のみ / ratio=0 (|x|=0) → +y のみ / ratio=0.5 (対角) → 45° 方向
@@ -119,12 +117,9 @@ void main() {
 
 	// ---- Pass 1: 最近傍種点を確定 (focus 中は uFocusCell を除外 & 5x5 で displaced seed を捕捉) ----
 	// Power diagram (Laguerre): d = |F - S|² - w で比較。境界は直線 (加算重み付きは双曲線)。
-	// nearestEuclidean は SDF morph 用: 「フォーカスセルの Voronoi 境界」までの距離計算に使う。
 	float minPower = 1e6;
 	float nearestWeight = 0.0;
-	float nearestEuclidean = 1e3;
 	vec2 nearestOffset = vec2(0.0);
-	vec2 nearestNeighbor = vec2(0.0);
 	vec2 nearestCellId = vec2(0.0);
 
 	for (int y = -2; y <= 2; y++) {
@@ -142,10 +137,8 @@ void main() {
 			if (d < minPower) {
 				minPower = d;
 				nearestOffset = diff;
-				nearestNeighbor = neighbor;
 				nearestCellId = cellId;
 				nearestWeight = w;
-				nearestEuclidean = sqrt(distSq);
 			}
 		}
 	}
@@ -170,16 +163,19 @@ void main() {
 
 	// ---- Pass 2: 最近傍と各隣接種点の「垂直二等分線」までの距離を取り、最小を境界距離とする ----
 	// 二等分線 = セルの実際の辺。この距離を使うことで、辺の向きや頂点近傍でも太さが均一になる。
-	// 最近傍セルを中心に 5x5 (24 セル) をスキャン。Voronoi 隣接する種点は最近傍から最大 2 セル
-	// 離れる可能性があり、3x3 では取りこぼしが起きるため。
+	// fragment の cell を中心に 5x5 (25 セル) をスキャン。Pass 1 と同じ範囲にすることで
+	// 「push で seed が動いても、Pass 1 で見た候補全部を Pass 2 でも評価する」を保証する。
 	float edgeDist = 8.0;
 	if (focusWins) {
 		// focus 内側: combined SDF (morph 済み境界) までの距離。rect ではなく実際の形状を追従
 		edgeDist = -combinedSDF;
 	} else {
+		// 検索原点は cell (Pass 1 と同じ) に固定。以前は nearestNeighbor 起点だったが、
+		// push で nearest が (±2, *) の極値になった時、反対側の隣接 seed の垂直二等分線を
+		// 完全に見逃して edgeDist が過大評価される (→ 逆側の細いセル境界を落とす) 問題があった。
 		for (int y = -2; y <= 2; y++) {
 			for (int x = -2; x <= 2; x++) {
-				vec2 neighbor = nearestNeighbor + vec2(float(x), float(y));
+				vec2 neighbor = vec2(float(x), float(y));
 				vec2 cellId = cell + neighbor;
 				if (focusActive && all(equal(cellId, uFocusCell))) continue;
 				vec2 point = seedPoint(cellId);

@@ -60,25 +60,79 @@ const seedPoint = (cellX: number, cellY: number, time: number, speed: number) =>
 	};
 };
 
-// Pass 1 と同じ最近傍探索を JS で行う
-const findNearestCell = (worldUvX: number, worldUvY: number) => {
+// クリックされた cell の Power cell の「半径」(最も近い Power 二等分線までの距離) を
+// 求めて rect の初期サイズにする。以前の 0.5*(1+w) 経験式は「隣接 seed の weight=0 かつ
+// 間隔=1」の仮定なので、centerZoom で隣接 weight も乗るケースだと過大評価になり、
+// 開始 rect が実セル境界を越えて隣まで食い込むズレを起こしていた。
+const computePowerCellRadius = (
+	cellX: number,
+	cellY: number,
+	offsetX: number,
+	offsetY: number,
+) => {
+	const p = seedPoint(cellX, cellY, currentTime, voronoiParams.animSpeed);
+	const seedX = cellX + p.x;
+	const seedY = cellY + p.y;
+	const wSelf = seedWeight(seedX, seedY, offsetX, offsetY);
+	let minRadius = Infinity;
+	for (let dy = -2; dy <= 2; dy++) {
+		for (let dx = -2; dx <= 2; dx++) {
+			if (dx === 0 && dy === 0) continue;
+			const otherCellX = cellX + dx;
+			const otherCellY = cellY + dy;
+			const op = seedPoint(
+				otherCellX,
+				otherCellY,
+				currentTime,
+				voronoiParams.animSpeed,
+			);
+			const otherSeedX = otherCellX + op.x;
+			const otherSeedY = otherCellY + op.y;
+			const wOther = seedWeight(otherSeedX, otherSeedY, offsetX, offsetY);
+			const L = Math.hypot(otherSeedX - seedX, otherSeedY - seedY);
+			if (L < 1e-3) continue;
+			// self→other 方向で計った、self seed から Power 二等分線までの距離。
+			// Power diagram: 二等分線は midpoint から (w_self - w_other)/(2L) だけ
+			// other 側にシフトした直線 → self からの距離 = L/2 - (w_other - w_self)/(2L)。
+			const radius = L / 2 + (wSelf - wOther) / (2 * L);
+			if (radius < minRadius) minRadius = radius;
+		}
+	}
+	// 過小 radius (負値含む: self が完全に飲まれているセル) は最低サイズにクランプ。
+	// これ以下だと rect が点になって click 演出が消えるため。
+	return Math.max(minRadius, 0.05);
+};
+
+// Pass 1 と同じ最近傍探索を JS で行う。
+// シェーダは Power diagram (d = distSq - w) で判定しているので、こちらも weight を
+// 差し引かないと centerZoom で weight が乗ったセル付近のクリックで別セルを掴んでしまう。
+// また push は uFocusAmount=0 の間は無効 (最初のクリック時点は必ず 0) なので、
+// ここでは displaceForFocus 相当は不要 (rawSeedWorld = seedWorld で OK)。
+// 検索範囲は shader と同じ 5x5 (Power diagram では weight で境界が伸びるため 3x3 では足りない)。
+const findNearestCell = (
+	worldUvX: number,
+	worldUvY: number,
+	offsetX: number,
+	offsetY: number,
+) => {
 	const gridX = Math.floor(worldUvX);
 	const gridY = Math.floor(worldUvY);
-	const fx = worldUvX - gridX;
-	const fy = worldUvY - gridY;
-	let minDist = Infinity;
+	let minPower = Infinity;
 	let nx = 0;
 	let ny = 0;
-	for (let dy = -1; dy <= 1; dy++) {
-		for (let dx = -1; dx <= 1; dx++) {
+	for (let dy = -2; dy <= 2; dy++) {
+		for (let dx = -2; dx <= 2; dx++) {
 			const cellX = gridX + dx;
 			const cellY = gridY + dy;
 			const p = seedPoint(cellX, cellY, currentTime, voronoiParams.animSpeed);
-			const ox = dx + p.x - fx;
-			const oy = dy + p.y - fy;
-			const d = ox * ox + oy * oy;
-			if (d < minDist) {
-				minDist = d;
+			const seedWorldX = cellX + p.x;
+			const seedWorldY = cellY + p.y;
+			const ox = seedWorldX - worldUvX;
+			const oy = seedWorldY - worldUvY;
+			const w = seedWeight(seedWorldX, seedWorldY, offsetX, offsetY);
+			const d = ox * ox + oy * oy - w;
+			if (d < minPower) {
+				minPower = d;
 				nx = cellX;
 				ny = cellY;
 			}
@@ -114,18 +168,18 @@ export const setupFocus = () => {
 		const worldUvX = (vUvX - 0.5) * aspect * density + offset.x;
 		const worldUvY = (vUvY - 0.5) * density + offset.y;
 
-		const cell = findNearestCell(worldUvX, worldUvY);
+		const cell = findNearestCell(worldUvX, worldUvY, offset.x, offset.y);
 		focusCell.x = cell.x;
 		focusCell.y = cell.y;
 		hasFocus = true;
 
-		// クリックされたセルの seed world 位置から weight を計算し、
-		// Power diagram のセル半径 ≈ (1 + w) / 2 を初期 rect サイズに
-		const p = seedPoint(cell.x, cell.y, currentTime, voronoiParams.animSpeed);
-		const seedWorldX = cell.x + p.x;
-		const seedWorldY = cell.y + p.y;
-		const w = seedWeight(seedWorldX, seedWorldY, offset.x, offset.y);
-		focusInitialSize = 0.5 * (1 + w);
+		// クリックされたセルの実 Power cell 半径を初期 rect サイズに使う
+		focusInitialSize = computePowerCellRadius(
+			cell.x,
+			cell.y,
+			offset.x,
+			offset.y,
+		);
 
 		focusTween?.kill();
 		focusTween = gsap.to(state, {
