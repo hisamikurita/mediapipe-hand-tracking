@@ -12,13 +12,16 @@ export const params = {
 	showPoints: false,
 	showImages: true,
 	imageScale: 0.5,
-	parallax: 0.35,
+	parallax: 1.35,
+	centerZoom: 3.8,
 	colorA: "#1e2a55",
 	colorB: "#d1e6ff",
-	edgeColor: "#050914",
+	edgeColor: "#ffffff",
 };
 
 let material: ShaderMaterial;
+// アトラスに含まれる動画スロットを毎フレーム更新するための関数
+let atlasTick: (() => void) | null = null;
 
 export const setupVoronoi = () => {
 	const geometry = new PlaneGeometry(2, 2);
@@ -48,6 +51,10 @@ export const setupVoronoi = () => {
 			uImageScale: { value: params.imageScale },
 			uScrollVelocity: { value: new Vector2(0, 0) },
 			uParallax: { value: params.parallax },
+			uCenterZoom: { value: params.centerZoom },
+			uFocusCell: { value: new Vector2(0, 0) },
+			uFocusAmount: { value: 0 },
+			uFocusInitialSize: { value: 0.5 },
 		},
 	});
 	const mesh = new Mesh(geometry, material);
@@ -60,7 +67,7 @@ export const setupVoronoi = () => {
 		);
 	});
 
-	// バックグラウンドで画像アトラスを構築。完了したら uniform を差し替える
+	// バックグラウンドで画像/動画アトラスを構築。完了したら uniform を差し替える
 	loadImageAtlas().then((atlas) => {
 		if (!atlas) return;
 		material.uniforms.uAtlas.value = atlas.texture;
@@ -68,6 +75,7 @@ export const setupVoronoi = () => {
 		material.uniforms.uAtlasRows.value = atlas.rows;
 		material.uniforms.uImageCount.value = atlas.count;
 		material.uniforms.uImagesReady.value = 1;
+		atlasTick = atlas.tick;
 	});
 };
 
@@ -75,7 +83,10 @@ export const updateVoronoi = (
 	elapsed: number,
 	offset: { x: number; y: number },
 	scrollVelocity: { x: number; y: number },
+	focus: { cell: { x: number; y: number }; amount: number; initialSize: number },
 ) => {
+	// 動画スロットを毎フレーム最新のフレームで再描画 (texture.needsUpdate も内部で立てる)
+	atlasTick?.();
 	material.uniforms.uTime.value = elapsed;
 	material.uniforms.uDensity.value = params.density;
 	material.uniforms.uAnimSpeed.value = params.animSpeed;
@@ -84,6 +95,9 @@ export const updateVoronoi = (
 	material.uniforms.uShowImages.value = params.showImages ? 1 : 0;
 	material.uniforms.uImageScale.value = params.imageScale;
 	material.uniforms.uParallax.value = params.parallax;
+	material.uniforms.uCenterZoom.value = params.centerZoom;
+	material.uniforms.uFocusAmount.value = focus.amount;
+	material.uniforms.uFocusInitialSize.value = focus.initialSize;
 	(material.uniforms.uColorA.value as Color).set(params.colorA);
 	(material.uniforms.uColorB.value as Color).set(params.colorB);
 	(material.uniforms.uEdgeColor.value as Color).set(params.edgeColor);
@@ -92,6 +106,7 @@ export const updateVoronoi = (
 		scrollVelocity.x,
 		scrollVelocity.y,
 	);
+	(material.uniforms.uFocusCell.value as Vector2).set(focus.cell.x, focus.cell.y);
 };
 
 export const getDensity = () => params.density;

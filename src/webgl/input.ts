@@ -40,6 +40,18 @@ const DRAG_INERTIA_FACTOR = 0.25;
 const SAMPLE_WINDOW_MS = 100;
 // scrollVelocity の EMA 平滑化係数 (パララックス用、ジャダー抑制)
 const SCROLL_VELOCITY_EMA = 0.2;
+// クリック判定: down〜up 間の総移動量 (px) と時間 (ms) 以下ならドラッグではなくクリック扱い
+const CLICK_MOVE_THRESHOLD = 8;
+const CLICK_DURATION_MS = 500;
+
+type ClickHandler = (screenX: number, screenY: number) => void;
+let clickHandler: ClickHandler | null = null;
+let downTime = 0;
+let totalMovement = 0;
+
+export const setClickHandler = (fn: ClickHandler) => {
+	clickHandler = fn;
+};
 
 const pixelToCellScale = (density: number) => density / window.innerHeight;
 
@@ -74,6 +86,8 @@ export const setupInput = (getDensity: () => number) => {
 		isDragging = true;
 		lastPointer.x = e.clientX;
 		lastPointer.y = e.clientY;
+		downTime = performance.now();
+		totalMovement = 0;
 		samples.length = 0;
 		samples.push({ t: performance.now(), x: e.clientX, y: e.clientY });
 		canvas.style.cursor = "grabbing";
@@ -86,6 +100,8 @@ export const setupInput = (getDensity: () => number) => {
 		const dy = e.clientY - lastPointer.y;
 		lastPointer.x = e.clientX;
 		lastPointer.y = e.clientY;
+
+		totalMovement += Math.hypot(dx, dy);
 
 		const scale = pixelToCellScale(getDensity());
 		// ドラッグは「意図位置」に直接足す。実際の描画は lerp (updateInput) で追従
@@ -105,6 +121,16 @@ export const setupInput = (getDensity: () => number) => {
 		isDragging = false;
 		canvas.style.cursor = "grab";
 		canvas.releasePointerCapture(e.pointerId);
+
+		// クリック判定: 総移動量が小さく短時間なら drag ではなく click として扱う
+		const upTime = performance.now();
+		if (
+			totalMovement < CLICK_MOVE_THRESHOLD &&
+			upTime - downTime < CLICK_DURATION_MS
+		) {
+			clickHandler?.(e.clientX, e.clientY);
+			return;
+		}
 
 		if (samples.length < 2) return;
 		const oldest = samples[0];

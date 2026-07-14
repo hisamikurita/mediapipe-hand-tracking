@@ -6,6 +6,7 @@ export const setupGui = () => {
 	gui.add(params, "density", 1, 30, 0.5).name("density");
 	gui.add(params, "animSpeed", 0, 2, 0.01).name("anim speed");
 	gui.add(params, "edgeWidth", 0.0, 0.3, 0.005).name("edge width");
+	gui.add(params, "centerZoom", 1.0, 5.0, 0.05).name("center zoom");
 	gui.add(params, "showPoints").name("show seed points");
 
 	const images = gui.addFolder("images");
