@@ -336,25 +336,20 @@ const updateRig = (rig: HandRig, view: HandView) => {
 	}
 };
 
-// 毎フレーム: handedness でリグを選び、トイハンド/リグの表示を切り替える
+// 毎フレーム: handedness でリグを選び、検出中の手だけリグを表示する
 export const updateHandDisplay = () => {
-	const rigActive = isRigActive();
-	for (const h of hands) {
-		h.group.visible = h.detected && !rigActive;
-	}
+	if (!isRigActive()) return;
 	const rigUsed = [false, false];
-	if (rigActive) {
-		for (const h of hands) {
-			if (!h.detected) continue;
-			// handedness でリグを選ぶ(埋まっていたらもう片方にフォールバック)
-			let idx = h.label === "Right" ? 1 : 0;
-			if (rigUsed[idx] || !handRigs[idx]) idx = 1 - idx;
-			const rig = handRigs[idx];
-			if (!rig || rigUsed[idx]) continue;
-			rigUsed[idx] = true;
-			rig.wrapper.visible = true;
-			updateRig(rig, h);
-		}
+	for (const h of hands) {
+		if (!h.detected) continue;
+		// handedness でリグを選ぶ(埋まっていたらもう片方にフォールバック)
+		let idx = h.label === "Right" ? 1 : 0;
+		if (rigUsed[idx] || !handRigs[idx]) idx = 1 - idx;
+		const rig = handRigs[idx];
+		if (!rig || rigUsed[idx]) continue;
+		rigUsed[idx] = true;
+		rig.wrapper.visible = true;
+		updateRig(rig, h);
 	}
 	for (let i = 0; i < handRigs.length; i++) {
 		const rig = handRigs[i];

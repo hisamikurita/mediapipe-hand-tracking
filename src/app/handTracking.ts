@@ -1,6 +1,6 @@
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import * as THREE from "three";
-import { camera, hands, isRigActive, updateHandView } from "../webgl";
+import { camera, hands } from "../webgl";
 import { setStatus } from "./status";
 
 let handLandmarker: HandLandmarker | null = null;
@@ -62,7 +62,6 @@ export const updateHand = () => {
 
 	let anyDetectedBefore = false;
 	for (const h of hands) if (h.detected) anyDetectedBefore = true;
-	const rigActive = isRigActive();
 
 	for (let hIdx = 0; hIdx < hands.length; hIdx++) {
 		const h = hands[hIdx];
@@ -85,7 +84,6 @@ export const updateHand = () => {
 			else h.smoothed[i].lerp(tmpTarget, 0.45);
 		}
 		h.smoothingInitialized = true;
-		if (!rigActive) updateHandView(h);
 	}
 
 	if (!anyDetectedBefore) setStatus("", true);
