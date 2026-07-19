@@ -16,6 +16,9 @@ export const CAMERA = {
 	MOBILE_Z: 24,
 } as const;
 
+// モバイルではトイのサイズ自体も縮めて、狭いビューポートで見せる
+export const MOBILE_TOY_SCALE = 0.6;
+
 // 陰影
 export const SHADING_PARAMS = {
 	gradientShadow: 142,

@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
-import { FLOOR_Y } from "./constants";
+import { FLOOR_Y, MOBILE_TOY_SCALE } from "./constants";
 import { scene } from "./core";
 import { addMeshOutline, toonGradientMap } from "./material";
 import { GROUP_TOY, physicsWorld } from "./physics";
@@ -25,6 +25,9 @@ const TOY_DEFAULT_SIZE: Record<ToyKind, number> = {
 	cylinder: 0.55,
 	torus: 0.55,
 };
+
+const toyScale =
+	document.documentElement.dataset.mobile === "true" ? MOBILE_TOY_SCALE : 1;
 
 const registerToy = (
 	geometry: THREE.BufferGeometry,
@@ -55,8 +58,9 @@ const createToy = (
 	x: number,
 	y: number,
 	z: number,
-	size = TOY_DEFAULT_SIZE[kind],
+	baseSize = TOY_DEFAULT_SIZE[kind],
 ) => {
+	const size = baseSize * toyScale;
 	const body = new CANNON.Body({
 		mass: 1,
 		collisionFilterGroup: GROUP_TOY,
@@ -109,8 +113,9 @@ fontLoader.load(
 			x: number,
 			y: number,
 			z: number,
-			size: number,
+			baseSize: number,
 		) => {
+			const size = baseSize * toyScale;
 			const geometry = new TextGeometry(text, {
 				font,
 				size,
