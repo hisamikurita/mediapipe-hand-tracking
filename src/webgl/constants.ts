@@ -12,6 +12,8 @@ export const CAMERA = {
 	NEAR: 0.1,
 	FAR: 100,
 	INITIAL_Z: 14,
+	// モバイルはカメラを引いてシーン全体を小さく収める
+	MOBILE_Z: 24,
 } as const;
 
 // 陰影

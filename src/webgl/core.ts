@@ -17,13 +17,15 @@ export const scene = new THREE.Scene();
 scene.background = new THREE.Color(BACKGROUND_COLOR);
 scene.fog = new THREE.Fog(BACKGROUND_COLOR, FOG.NEAR, FOG.FAR);
 
+const isMobile = document.documentElement.dataset.mobile === "true";
+
 export const camera = new THREE.PerspectiveCamera(
 	CAMERA.FOV,
 	window.innerWidth / window.innerHeight,
 	CAMERA.NEAR,
 	CAMERA.FAR,
 );
-camera.position.set(0, 0, CAMERA.INITIAL_Z);
+camera.position.set(0, 0, isMobile ? CAMERA.MOBILE_Z : CAMERA.INITIAL_Z);
 camera.lookAt(0, 0, 0);
 
 export const handleResize = (): void => {

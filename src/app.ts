@@ -8,9 +8,16 @@ import {
 	updatePhysics,
 } from "./webgl";
 
-if (document.documentElement.dataset.mobile !== "true") {
+handleResize();
+
+if (document.documentElement.dataset.mobile === "true") {
+	// モバイルではハンドトラッキングを起動せず、物理演算だけ動かしてシーンを見せる
+	setStatus("Please access from a desktop browser.");
+	startAnimationLoop(() => {
+		updatePhysics();
+	});
+} else {
 	loadRigModel();
-	handleResize();
 
 	initHandTracking().catch((err) => {
 		console.error(err);
