@@ -60,4 +60,5 @@ html[data-mobile="true"] #credit {
 	top: auto;
 	bottom: 16px;
 	right: 16px;
+	font-size: 10px;
 }
