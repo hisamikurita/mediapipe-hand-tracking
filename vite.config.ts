@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import glsl from "vite-plugin-glsl";
 
-// GitHub Pages 用: サブパス公開 (`/voronoi-diagram/`) の場合は VITE_BASE=/voronoi-diagram/ を渡す
+// GitHub Pages 用: サブパス公開 (`/mediapipe-hand-tracking/`) の場合は VITE_BASE=/mediapipe-hand-tracking/ を渡す
 const base = process.env.VITE_BASE ?? "/";
 
 export default defineConfig({

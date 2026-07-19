@@ -1,33 +1,23 @@
-import "./style.css";
+import { initHandTracking, updateHand } from "./app/handTracking";
+import { setStatus } from "./app/status";
 import {
-	getDensity,
-	getFocus,
-	getOffset,
-	getScrollVelocity,
-	getShaderTime,
 	handleResize,
-	initRenderer,
-	setupFocus,
-	setupGui,
-	setupInput,
-	setupVoronoi,
+	loadRigModel,
 	startAnimationLoop,
-	updateFocus,
-	updateInput,
-	updateVoronoi,
+	updateHandDisplay,
+	updatePhysics,
 } from "./webgl";
 
-initRenderer();
-setupVoronoi();
-setupGui();
-setupInput(getDensity);
-setupFocus();
-
+loadRigModel();
 handleResize();
 
-startAnimationLoop((elapsed) => {
-	updateInput();
-	updateFocus(elapsed);
-	// フォーカス中は shaderTime が凍結 → 種点位置が動かず、click 時のセル形状が保たれる
-	updateVoronoi(getShaderTime(), getOffset(), getScrollVelocity(), getFocus());
+initHandTracking().catch((err) => {
+	console.error(err);
+	setStatus("Failed to start the camera");
+});
+
+startAnimationLoop(() => {
+	updateHand();
+	updateHandDisplay();
+	updatePhysics();
 });

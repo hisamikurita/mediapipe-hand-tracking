@@ -1,53 +1,44 @@
-import {
-	OrthographicCamera,
-	PerspectiveCamera,
-	Scene,
-	WebGLRenderer,
-} from "three";
+import * as THREE from "three";
+import { BACKGROUND_COLOR, CAMERA, FOG } from "./constants";
 
-// フルスクリーンで平面を敷き詰めるだけの用途なので Orthographic を採用。
-// Perspective 版もアプリ側から差し替えられるようにエクスポートしておく。
-export const scene = new Scene();
+export const canvas = document.getElementById("stage") as HTMLCanvasElement;
 
-export const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+export const renderer = new THREE.WebGLRenderer({
+	canvas,
+	antialias: true,
+	alpha: true,
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-// Perspective は使わないが型互換のため保持
-export const _perspective = new PerspectiveCamera(50, 1, 0.1, 100);
+export const scene = new THREE.Scene();
+scene.background = new THREE.Color(BACKGROUND_COLOR);
+scene.fog = new THREE.Fog(BACKGROUND_COLOR, FOG.NEAR, FOG.FAR);
 
-let renderer: WebGLRenderer;
-let resizeCallback: (() => void) | null = null;
+export const camera = new THREE.PerspectiveCamera(
+	CAMERA.FOV,
+	window.innerWidth / window.innerHeight,
+	CAMERA.NEAR,
+	CAMERA.FAR,
+);
+camera.position.set(0, 0, CAMERA.INITIAL_Z);
+camera.lookAt(0, 0, 0);
 
-export const initRenderer = () => {
-	renderer = new WebGLRenderer({
-		antialias: true,
-		powerPreference: "high-performance",
-	});
-	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-	renderer.setSize(window.innerWidth, window.innerHeight);
-	document.body.appendChild(renderer.domElement);
-};
-
-export const getRenderer = (): WebGLRenderer => renderer;
-
-export const handleResize = (onResize?: () => void) => {
-	if (onResize) {
-		resizeCallback = onResize;
-	}
-	const resize = () => {
+export const handleResize = (): void => {
+	window.addEventListener("resize", () => {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
 		renderer.setSize(window.innerWidth, window.innerHeight);
-		resizeCallback?.();
-	};
-	window.addEventListener("resize", resize);
-	resize();
+	});
 };
 
-export const startAnimationLoop = (update: (elapsed: number) => void) => {
-	const start = performance.now();
+export const startAnimationLoop = (update: () => void): void => {
 	const tick = () => {
-		const elapsed = (performance.now() - start) / 1000;
-		update(elapsed);
+		update();
 		renderer.render(scene, camera);
 		requestAnimationFrame(tick);
 	};
-	requestAnimationFrame(tick);
+	tick();
 };
