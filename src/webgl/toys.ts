@@ -100,53 +100,56 @@ const createToy = (
 
 // テキストのオブジェクト: 文字ごとではなく単語まるごと1つの剛体にする
 const fontLoader = new FontLoader();
-fontLoader.load("/fonts/helvetiker_bold.typeface.json", (font) => {
-	const createTextToy = (
-		text: string,
-		color: string,
-		x: number,
-		y: number,
-		z: number,
-		size: number,
-	) => {
-		const geometry = new TextGeometry(text, {
-			font,
-			size,
-			depth: size * 0.4,
-			curveSegments: 6,
-			bevelEnabled: true,
-			bevelThickness: size * 0.06,
-			bevelSize: size * 0.04,
-			bevelSegments: 2,
-		});
-		geometry.computeBoundingBox();
-		const bb = geometry.boundingBox;
-		if (!bb) return;
-		// 原点が左下手前なので中心に寄せてから当たり判定の箱を合わせる
-		const cx = (bb.min.x + bb.max.x) / 2;
-		const cy = (bb.min.y + bb.max.y) / 2;
-		const cz = (bb.min.z + bb.max.z) / 2;
-		geometry.translate(-cx, -cy, -cz);
-		const body = new CANNON.Body({
-			mass: 1,
-			collisionFilterGroup: GROUP_TOY,
-			shape: new CANNON.Box(
-				new CANNON.Vec3(
-					(bb.max.x - bb.min.x) / 2,
-					(bb.max.y - bb.min.y) / 2,
-					(bb.max.z - bb.min.z) / 2,
+fontLoader.load(
+	`${import.meta.env.BASE_URL}fonts/helvetiker_bold.typeface.json`,
+	(font) => {
+		const createTextToy = (
+			text: string,
+			color: string,
+			x: number,
+			y: number,
+			z: number,
+			size: number,
+		) => {
+			const geometry = new TextGeometry(text, {
+				font,
+				size,
+				depth: size * 0.4,
+				curveSegments: 6,
+				bevelEnabled: true,
+				bevelThickness: size * 0.06,
+				bevelSize: size * 0.04,
+				bevelSegments: 2,
+			});
+			geometry.computeBoundingBox();
+			const bb = geometry.boundingBox;
+			if (!bb) return;
+			// 原点が左下手前なので中心に寄せてから当たり判定の箱を合わせる
+			const cx = (bb.min.x + bb.max.x) / 2;
+			const cy = (bb.min.y + bb.max.y) / 2;
+			const cz = (bb.min.z + bb.max.z) / 2;
+			geometry.translate(-cx, -cy, -cz);
+			const body = new CANNON.Body({
+				mass: 1,
+				collisionFilterGroup: GROUP_TOY,
+				shape: new CANNON.Box(
+					new CANNON.Vec3(
+						(bb.max.x - bb.min.x) / 2,
+						(bb.max.y - bb.min.y) / 2,
+						(bb.max.z - bb.min.z) / 2,
+					),
 				),
-			),
-		});
-		registerToy(geometry, color, body, x, y, z);
-	};
+			});
+			registerToy(geometry, color, body, x, y, z);
+		};
 
-	createTextToy("HELLO", "#ff5252", -3.6, FLOOR_Y + 10, 0.2, 0.75);
-	createTextToy("POP!", "#40c4ff", 2.6, FLOOR_Y + 11, -0.5, 0.9);
-	createTextToy("YAY", "#ffd740", 5.2, FLOOR_Y + 12, 0.8, 0.8);
-	createTextToy("WOW", "#69f0ae", -0.8, FLOOR_Y + 19, -0.6, 0.85);
-	createTextToy("FUN", "#ff80ab", -5.8, FLOOR_Y + 20, 0.4, 0.8);
-});
+		createTextToy("HELLO", "#ff5252", -3.6, FLOOR_Y + 10, 0.2, 0.75);
+		createTextToy("POP!", "#40c4ff", 2.6, FLOOR_Y + 11, -0.5, 0.9);
+		createTextToy("YAY", "#ffd740", 5.2, FLOOR_Y + 12, 0.8, 0.8);
+		createTextToy("WOW", "#69f0ae", -0.8, FLOOR_Y + 19, -0.6, 0.85);
+		createTextToy("FUN", "#ff80ab", -5.8, FLOOR_Y + 20, 0.4, 0.8);
+	},
+);
 
 createToy("box", "#ff8a5c", -6.4, FLOOR_Y + 3, -1);
 createToy("box", "#6ec6ff", -2.8, FLOOR_Y + 5, 0.8);

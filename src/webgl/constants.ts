@@ -51,4 +51,4 @@ export const TIP_RADIUS = 0.26;
 export const PALM_THICKNESS = 0.38;
 
 // Rig model
-export const MODEL_URL = "/cartoon_hand.glb";
+export const MODEL_URL = `${import.meta.env.BASE_URL}cartoon_hand.glb`;
