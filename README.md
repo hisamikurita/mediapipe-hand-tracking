@@ -23,4 +23,4 @@ Interactive hand-tracked toy experience built with MediaPipe, Three.js and Canno
 
 ## Credit 🙏
 
-- Hand model: "Cartoon Hand Rig" by Andy Cuccaro (CC-BY) — https://andycuccaro.gumroad.com/l/cartoon-hand-rig
+<a href="https://andycuccaro.gumroad.com/l/cartoon-hand-rig">Hand model: "Cartoon Hand Rig" by Andy Cuccaro (CC-BY)</a>
