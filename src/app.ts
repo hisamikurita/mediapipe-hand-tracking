@@ -8,16 +8,18 @@ import {
 	updatePhysics,
 } from "./webgl";
 
-loadRigModel();
-handleResize();
+if (document.documentElement.dataset.mobile !== "true") {
+	loadRigModel();
+	handleResize();
 
-initHandTracking().catch((err) => {
-	console.error(err);
-	setStatus("Failed to start the camera");
-});
+	initHandTracking().catch((err) => {
+		console.error(err);
+		setStatus("Failed to start the camera");
+	});
 
-startAnimationLoop(() => {
-	updateHand();
-	updateHandDisplay();
-	updatePhysics();
-});
+	startAnimationLoop(() => {
+		updateHand();
+		updateHandDisplay();
+		updatePhysics();
+	});
+}

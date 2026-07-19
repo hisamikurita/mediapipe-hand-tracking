@@ -37,10 +37,26 @@
 			content="https://hisamikurita.github.io/mediapipe-hand-tracking/ogp.png"
 		/>
 		<link rel="stylesheet" href="./style.css" />
+		<script>
+			if (
+				/Android|iPhone|iPod|IEMobile|BlackBerry|webOS|Opera Mini/i.test(
+					navigator.userAgent,
+				)
+			) {
+				document.documentElement.dataset.mobile = "true";
+			}
+		</script>
 	</head>
 	<body>
 		<canvas id="stage"></canvas>
 		<div id="status">Starting camera…</div>
+		<div id="mobile-block">
+			<p>
+				PCブラウザからアクセスしてください
+				<br />
+				<span>Please access from a desktop browser.</span>
+			</p>
+		</div>
 		<a
 			id="credit"
 			href="https://andycuccaro.gumroad.com/l/cartoon-hand-rig"
