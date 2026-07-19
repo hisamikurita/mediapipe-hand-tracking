@@ -1,6 +1,6 @@
 # MediaPipe Hand Tracking
 
-Interactive hand-tracked toy experience built with MediaPipe, Three.js and Cannon-es, 🤖 Generated with Claude Code Fable
+Interactive hand-tracked toy experience built with MediaPipe, Three.js and Cannon-es, 🤖 Generated with Claude Code Fable 5
 
 - <a href="https://hisamikurita.github.io/mediapipe-hand-tracking/">DEMO</a>
 
